@@ -15,8 +15,31 @@ services:
             - SECRETKEY_PATH=${SECRETKEY_PATH}
             - LOG_LEVEL=${LOG_LEVEL}
             - LOG_PATH=${LOG_PATH}
+            - DATABASE_TYPE=${DATABASE_TYPE}
+            - DATABASE_PORT=${DATABASE_PORT}
+            - DATABASE_HOST=${DATABASE_HOST}
+            - DATABASE_NAME=${DATABASE_NAME}
+            - DATABASE_USER=${DATABASE_USER}
+            - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+            - OVERRIDE_DATABASE=true
         ports:
             - '${PORT}:${PORT}'
         volumes:
             - ~/.flowise:/root/.flowise
         command: /bin/sh -c "sleep 3; flowise start"
+        depends_on:
+            - postgres
+    postgres:
+        image: postgres:alpine
+        environment:
+        - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+        - POSTGRES_DB=${DATABASE_NAME}
+        - POSTGRES_USER=${DATABASE_USER}
+        restart: always
+        volumes:
+        - db_data:/var/lib/postgresql/data
+        expose:
+        - 5432
+
+volumes:
+  db_data:
