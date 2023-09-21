@@ -4,6 +4,7 @@ services:
     flowise:
         image: flowiseai/flowise
         restart: always
+        container_name: flowise
         environment:
             - PORT=${PORT}
             - PASSPHRASE=${PASSPHRASE}
@@ -22,6 +23,20 @@ services:
             - DATABASE_USER=${DATABASE_USER}
             - DATABASE_PASSWORD=${DATABASE_PASSWORD}
             - OVERRIDE_DATABASE=true
+        labels:
+            - "traefik.enable=true"
+            - "traefik.docker.network=auto-gpt.tech"
+            - "traefik.http.routers.flowise-insecure.rule=Host(`cxo2.mium.chat`)"
+            - "traefik.http.routers.flowise-insecure.entrypoints=web"
+            - "traefik.http.middlewares.flowise-redirect-web-secure.redirectscheme.scheme=https"
+            - "traefik.http.routers.flowise-insecure.middlewares=flowise-redirect-web-secure"
+            - "traefik.http.routers.flowise.rule=Host(`cxo2.mium.chat`)"
+            - "traefik.http.routers.flowise.entrypoints=websecure"
+            - "traefik.http.routers.flowise.tls=true"
+            - "traefik.http.routers.flowise.tls.certresolver=myresolver"
+            - "traefik.http.services.flowise.loadbalancer.server.port=3000"
+            - "traefik.http.services.flowise.loadbalancer.sticky.cookie.httpOnly=true"
+            - "traefik.http.services.flowise.loadbalancer.sticky.cookie.secure=true"
         ports:
             - '${PORT}:${PORT}'
         volumes:
@@ -29,17 +44,27 @@ services:
         command: /bin/sh -c "sleep 3; flowise start"
         depends_on:
             - postgres
+        networks:
+            - auto-gpt.tech
+            - default
     postgres:
         image: postgres:alpine
+        container_name: flowise_db
         environment:
-        - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
-        - POSTGRES_DB=${DATABASE_NAME}
-        - POSTGRES_USER=${DATABASE_USER}
+            - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+            - POSTGRES_DB=${DATABASE_NAME}
+            - POSTGRES_USER=${DATABASE_USER}
         restart: always
         volumes:
-        - db_data:/var/lib/postgresql/data
+            - db_data:/var/lib/postgresql/data
         expose:
-        - 5432
+            - 5432
+        networks:
+            - default
 
 volumes:
   db_data:
+
+networks:
+  auto-gpt.tech:
+    external: true
