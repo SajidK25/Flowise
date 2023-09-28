@@ -58,7 +58,7 @@ jobs:
               script: |
                 cd $(pwd)/Flowise
                 git pull
-                sleep 
+                sleep 3
                 chmod +x ./setup_env.sh
                 bash ./setup_env.sh
 
