@@ -41,9 +41,9 @@ jobs:
 
         steps:
           - uses: actions/checkout@v2
-          - name: Set up SSH
-            run: |
-                ssh-keyscan -T github.com >> ~/.ssh/known_hosts
+        #   - name: Set up SSH
+        #     run: |
+        #         ssh-keyscan -T github.com >> ~/.ssh/known_hosts
           - name: Check for Node.js, NPM, and Yarn
             uses: actions/setup-node@v2
             with:
