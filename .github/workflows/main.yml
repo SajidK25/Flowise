@@ -53,10 +53,11 @@ jobs:
               env:
                 SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
                 SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+                VPS_IP_ADRESS: ${{ secrets.VPS_IP_ADRESS }}
               run: |
                 # Run a command to check if Node.js is installed
             
-                sshpass -p $SSH_PASSWORD ssh $SSH_USERNAME@your-vps-ip-address 'bash -s' << EOF
+                sshpass -p $SSH_PASSWORD ssh $SSH_USERNAME@$VPS_IP_ADRESS 'bash -s' << EOF
                     if ! command -v node &> /dev/null; then
                         echo "Node.js is not installed. Installing..."
                         curl -fsSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/nodesource-archive-keyring.gpg
