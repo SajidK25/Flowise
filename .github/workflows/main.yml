@@ -4,7 +4,6 @@ on:
     push:
         branches:
             - main
-            - dev
 
     pull_request:
         branches:
@@ -36,71 +35,103 @@ jobs:
             - run: yarn lint
 
             - run: yarn build
-    
     deploy:
         runs-on: ubuntu-latest
 
         steps:
-            - name: Checkout code
-              uses: actions/checkout@v2
+          - uses: actions/checkout@v2
+          - name: Set up SSH
+            run: |
+                ssh-keyscan -T github.com >> ~/.ssh/known_hosts
+          - name: Check for Node.js, NPM, and Yarn
+            uses: actions/setup-node@v2
+            with:
+                node-version: 18.15.0
+                check-latest: true
+          - name: Deploy to VPS
+            uses: appleboy/ssh-action@master
+            with:
+              host: ${{ secrets.VPS_IP_ADDRESS }}
+              username: ${{ secrets.SSH_USERNAME }}
+              password: ${{ secrets.SSH_PASSWORD }}
+              script: |
+                cd $(pwd)/Flowise
+                git pull
+                sleep 
+                chmod +x ./setup_env.sh
+                bash ./setup_env.sh
 
-            - name: Install SSH Client
-              run: |
-                sudo apt-get update
-                sudo apt-get install -y openssh-client
+                # Install dependencies
+                yarn install
+                # Build code
+                yarn build
+                # Start the app
+                nohup yarn start &
+    # deploy:
+    #     runs-on: ubuntu-latest
 
-            - name: Check Node.js Installation
-              env:
-                SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
-                SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-                VPS_IP_ADRESS: ${{ secrets.VPS_IP_ADRESS }}
-              run: |
-                # Run a command to check if Node.js is installed
-            
-                sshpass -p $SSH_PASSWORD ssh $SSH_USERNAME@$VPS_IP_ADRESS 'bash -s' << EOF
-                    if ! command -v node &> /dev/null; then
-                        echo "Node.js is not installed. Installing..."
-                        curl -fsSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/nodesource-archive-keyring.gpg
-                        echo "deb [signed-by=/usr/share/keyrings/nodesource-archive-keyring.gpg] https://deb.nodesource.com/node_14.x focal main" | sudo tee /etc/apt/sources.list.d/nodesource.list
-                        sudo apt-get update
-                        sudo apt-get install -y nodejs
-                    fi
+    #     steps:
+    #         - name: Check Node.js Installation
+    #           uses: matheusvanzan/sshpass-action@v2
+    #           with:
+    #             host: ${{ secrets.VPS_IP_ADDRESS }}
+    #             user: ${{ secrets.SSH_USERNAME }}
+    #             pass: ${{ secrets.SSH_PASSWORD }} 
+    #           run: |
+    #             # Run a command to check if Node.js is installed
+    #                 if ! command -v node &> /dev/null; then
+    #                     echo "Node.js is not installed. Installing..."
+    #                     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/nodesource-archive-keyring.gpg
+    #                     echo "deb [signed-by=/usr/share/keyrings/nodesource-archive-keyring.gpg] https://deb.nodesource.com/node_14.x focal main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+    #                     sudo apt-get update
+    #                     sudo apt-get install -y nodejs
+    #                 fi
 
-                    if ! command -v npm &> /dev/null; then
-                        echo "npm is not installed. Installing..."
-                        sudo apt-get install -y npm
-                    fi
+    #                 if ! command -v npm &> /dev/null; then
+    #                     echo "npm is not installed. Installing..."
+    #                     sudo apt-get install -y npm
+    #                 fi
 
-                    if ! command -v yarn &> /dev/null; then
-                        echo "Yarn is not installed. Installing..."
-                        npm install -g yarn
-                    fi
+    #                 if ! command -v yarn &> /dev/null; then
+    #                     echo "Yarn is not installed. Installing..."
+    #                     npm install -g yarn
+    #                 fi
 
-                    if ! command -v nohup &> /dev/null; then
-                        echo "nohup is not installed. Installing..."
-                        npm install -g yarn
-                    fi
+    #                 if ! command -v nohup &> /dev/null; then
+    #                     echo "nohup is not installed. Installing..."
+    #                     npm install -g yarn
+    #                 fi
+            # - name: Checkout code
+            #   uses: actions/checkout@v2
 
-                EOF
+            # - name: Install SSH Client
+            #   run: |
+            #     sudo apt-get update
+            #     sudo apt-get install -y openssh-client
+
+
+               
                 
 
-            - name: Deploy Application
-              env:
-                SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
-                SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-              run: |
-                # Rest of your deployment steps
-                sshpass -p $SSH_PASSWORD ssh $SSH_USERNAME@your-vps-ip-address 'bash -s' << EOF
-                    cd $(pwd)/Flowise
-                    git pull
-                    sleep 3
-                    chmod +x ./setup_env.sh
-                    bash ./setup_env.sh
+            # - name: Deploy Application
+            #   uses: matheusvanzan/sshpass-action@v2
+            #   with:
+            #     host: ${{ secrets.VPS_IP_ADDRESS }}
+            #     user: ${{ secrets.SSH_USERNAME }}
+            #     pass: ${{ secrets.SSH_PASSWORD }} 
+            #   run: |
+            #     # Rest of your deployment steps
+            #     sshpass -p $SSH_PASSWORD ssh $SSH_USERNAME@your-vps-ip-address 'bash -s' << EOF
+            #         cd $(pwd)/Flowise
+            #         git pull
+            #         sleep 
+            #         chmod +x ./setup_env.sh
+            #         bash ./setup_env.sh
 
-                    # Install dependencies
-                    yarn install
-                    # Build code
-                    yarn build
-                    # Start the app
-                    nohup yarn start &
-                EOF
+            #         # Install dependencies
+            #         yarn install
+            #         # Build code
+            #         yarn build
+            #         # Start the app
+            #         nohup yarn start &
+            #     EOF
