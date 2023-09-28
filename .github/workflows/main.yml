@@ -35,3 +35,70 @@ jobs:
             - run: yarn lint
 
             - run: yarn build
+    
+    deploy:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+
+            - name: Install SSH Client
+              run: |
+                sudo apt-get update
+                sudo apt-get install -y openssh-client
+
+            - name: Check Node.js Installation
+              env:
+                SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+                SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+              run: |
+                # Run a command to check if Node.js is installed
+            
+                sshpass -p $SSH_PASSWORD ssh $SSH_USERNAME@your-vps-ip-address 'bash -s' << EOF
+                    if ! command -v node &> /dev/null; then
+                        echo "Node.js is not installed. Installing..."
+                        curl -fsSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/nodesource-archive-keyring.gpg
+                        echo "deb [signed-by=/usr/share/keyrings/nodesource-archive-keyring.gpg] https://deb.nodesource.com/node_14.x focal main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+                        sudo apt-get update
+                        sudo apt-get install -y nodejs
+                    fi
+
+                    if ! command -v npm &> /dev/null; then
+                        echo "npm is not installed. Installing..."
+                        sudo apt-get install -y npm
+                    fi
+
+                    if ! command -v yarn &> /dev/null; then
+                        echo "Yarn is not installed. Installing..."
+                        npm install -g yarn
+                    fi
+
+                    if ! command -v nohup &> /dev/null; then
+                        echo "nohup is not installed. Installing..."
+                        npm install -g yarn
+                    fi
+
+                EOF
+                
+
+            - name: Deploy Application
+              env:
+                SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+                SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+              run: |
+                # Rest of your deployment steps
+                sshpass -p $SSH_PASSWORD ssh $SSH_USERNAME@your-vps-ip-address 'bash -s' << EOF
+                    cd $(pwd)/Flowise
+                    git pull
+                    sleep 3
+                    chmod +x ./setup_env.sh
+                    bash ./setup_env.sh
+
+                    # Install dependencies
+                    yarn install
+                    # Build code
+                    yarn build
+                    # Start the app
+                    nohup yarn start &
+                EOF
