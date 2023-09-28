@@ -49,8 +49,8 @@ jobs:
             with:
                 node-version: v18.15.0
                 check-latest: true
-                cache: 'yarn'
-                cache-dependency-path: yarn.lock
+                # cache: 'yarn'
+                # cache-dependency-path: yarn.lock
               
           - name: Deploy to VPS
             uses: appleboy/ssh-action@master
