@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo PORT=3000 >> ./packages/server/.env
+echo PORT=3000 > ./packages/server/.env
 echo PASSPHRASE=MYPASSPHRASE >> ./packages/server/.env # Passphrase used to create encryption key
 #echo DATABASE_PATH=/your_database_path/.flowise >> ./packages/server/.env
 #echo APIKEY_PATH=/your_api_key_path/.flowise >> ./packages/server/.env
@@ -29,4 +29,4 @@ echo PASSPHRASE=MYPASSPHRASE >> ./packages/server/.env # Passphrase used to crea
 #echo LANGCHAIN_API_KEY=your_api_key >> ./packages/server/.env
 #echo LANGCHAIN_PROJECT=your_project >> ./packages/server/.env
 
-echo PORT=8080 >> ./packages/ui/.env
+echo PORT=8088 > ./packages/ui/.env

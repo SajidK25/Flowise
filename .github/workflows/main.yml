@@ -49,6 +49,7 @@ jobs:
             with:
                 node-version: 18.15.0
                 check-latest: true
+              
           - name: Deploy to VPS
             uses: appleboy/ssh-action@master
             with:
@@ -56,6 +57,11 @@ jobs:
               username: ${{ secrets.SSH_USERNAME }}
               password: ${{ secrets.SSH_PASSWORD }}
               script: |
+                sudo apt update -y
+                sudo apt -y install curl
+                curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+                echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+                sudo apt install yarn -y
                 cd $(pwd)/Flowise
                 git pull
                 sleep 3
