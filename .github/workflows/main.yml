@@ -93,7 +93,7 @@ jobs:
                 # Build code
                 yarn build
                 # Start the app
-                nohup yarn start &
+                yarn start
     # deploy:
     #     runs-on: ubuntu-latest
 
