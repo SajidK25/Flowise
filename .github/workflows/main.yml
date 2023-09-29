@@ -92,6 +92,15 @@ jobs:
                 yarn install
                 # Build code
                 yarn build
+                # PORT check and kill the running process
+                PORT=3001
+                if lsof -i :$PORT >/dev/null; then
+                    echo "Port $PORT is occupied. Freeing it..."
+                    sudo kill -9 $(sudo lsof -t -i :$PORT)
+                    echo "Port $PORT has been freed."
+                else
+                    echo "Port $PORT is not occupied."
+                fi
                 # Start the app
                 yarn start
     # deploy:
