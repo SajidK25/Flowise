@@ -38,6 +38,7 @@ jobs:
             - run: yarn build
     deploy:
         runs-on: ubuntu-latest
+        timeout-minutes: 10
 
         steps:
           - uses: actions/checkout@v3
@@ -54,6 +55,7 @@ jobs:
               
           - name: Deploy to VPS
             uses: appleboy/ssh-action@master
+            timeout-minutes: 3
             with:
               host: ${{ secrets.VPS_IP_ADRESS }}
               username: ${{ secrets.SSH_USERNAME }}
