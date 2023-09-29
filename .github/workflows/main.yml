@@ -102,7 +102,7 @@ jobs:
                     echo "Port $PORT is not occupied."
                 fi
                 # Start the app
-                yarn start
+                nohup yarn start &
     # deploy:
     #     runs-on: ubuntu-latest
 
