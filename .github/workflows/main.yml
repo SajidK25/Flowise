@@ -59,7 +59,14 @@ jobs:
               username: ${{ secrets.SSH_USERNAME }}
               password: ${{ secrets.SSH_PASSWORD }}
               script: |
-                cd /home/sajid/Flowise
+                if ! command -v yarn &> /dev/null; then
+                    echo "Yarn is not installed. Installing..."
+                    sudo apt update -y && sudo apt install curl -y
+                    curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+                    echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+                    sudo apt install yarn -y 
+                fi
+                cd $(pwd)/Flowise
                 git stash
                 git pull
                 sleep 3
