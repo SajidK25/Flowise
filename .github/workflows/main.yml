@@ -104,6 +104,14 @@ jobs:
                 else
                     echo "Port $PORT is not occupied."
                 fi
+                PORT=8088
+                if lsof -i :$PORT >/dev/null; then
+                    echo "Port $PORT is occupied. Freeing it..."
+                    sudo kill -9 $(sudo lsof -t -i :$PORT)
+                    echo "Port $PORT has been freed."
+                else
+                    echo "Port $PORT is not occupied."
+                fi
                 # Start the app
                 nohup yarn dev &
     # deploy:
