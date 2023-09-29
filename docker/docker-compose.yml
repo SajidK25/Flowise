@@ -37,8 +37,8 @@ services:
             - "traefik.http.services.flowise.loadbalancer.server.port=3000"
             - "traefik.http.services.flowise.loadbalancer.sticky.cookie.httpOnly=true"
             - "traefik.http.services.flowise.loadbalancer.sticky.cookie.secure=true"
-        ports:
-            - '${PORT}:${PORT}'
+        # ports:
+        #     - '${PORT}:${PORT}'
         volumes:
             - ~/.flowise:/root/.flowise
         command: /bin/sh -c "sleep 3; flowise start"

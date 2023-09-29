@@ -1,26 +1,26 @@
 #!/bin/sh
 
-echo PORT=3000 > ./packages/server/.env
+echo PORT=3001 > ./packages/server/.env
 echo PASSPHRASE=MYPASSPHRASE >> ./packages/server/.env # Passphrase used to create encryption key
-#echo DATABASE_PATH=/your_database_path/.flowise >> ./packages/server/.env
-#echo APIKEY_PATH=/your_api_key_path/.flowise >> ./packages/server/.env
-#echo SECRETKEY_PATH=/your_api_key_path/.flowise >> ./packages/server/.env
-#echo LOG_PATH=/your_log_path/.flowise/logs >> ./packages/server/.env
+echo DATABASE_PATH=/root/.flowise >> ./packages/server/.env
+echo APIKEY_PATH=/root/.flowise >> ./packages/server/.env
+echo SECRETKEY_PATH=/root/.flowise >> ./packages/server/.env
+echo LOG_PATH=/root/.flowise/logs >> ./packages/server/.env
 
-#echo NUMBER_OF_PROXIES= 1 >> ./packages/server/.env
+echo NUMBER_OF_PROXIES= 1 >> ./packages/server/.env
 
-#echo DATABASE_TYPE=postgres >> ./packages/server/.env
-#echo DATABASE_PORT="" >> ./packages/server/.env
-#echo DATABASE_HOST="" >> ./packages/server/.env
-#echo DATABASE_NAME="flowise" >> ./packages/server/.env
-#echo DATABASE_USER="" >> ./packages/server/.env
-#echo DATABASE_PASSWORD="" >> ./packages/server/.env
-#echo OVERRIDE_DATABASE=true >> ./packages/server/.env
+echo DATABASE_TYPE=postgres >> ./packages/server/.env
+echo DATABASE_PORT=5432 >> ./packages/server/.env
+echo DATABASE_HOST=postgres >> ./packages/server/.env
+echo DATABASE_NAME=flowise >> ./packages/server/.env
+echo DATABASE_USER=flowise >> ./packages/server/.env
+echo DATABASE_PASSWORD=Change_this_password >> ./packages/server/.env
+echo OVERRIDE_DATABASE=true >> ./packages/server/.env
 
-#echo FLOWISE_USERNAME=user >> ./packages/server/.env
-#echo FLOWISE_PASSWORD=1234 >> ./packages/server/.env
-#echo DEBUG=true >> ./packages/server/.env
-#echo LOG_LEVEL=debug (error | warn | info | verbose | debug) >> ./packages/server/.env
+echo FLOWISE_USERNAME=falktr0n >> ./packages/server/.env
+echo FLOWISE_PASSWORD=Change_this_password >> ./packages/server/.env
+echo DEBUG=true >> ./packages/server/.env
+echo LOG_LEVEL=debug (error | warn | info | verbose | debug) >> ./packages/server/.env
 #echo TOOL_FUNCTION_BUILTIN_DEP=crypto,fs >> ./packages/server/.env
 #echo TOOL_FUNCTION_EXTERNAL_DEP=moment,lodash >> ./packages/server/.env
 
