@@ -2,10 +2,10 @@
 
 echo PORT=3001 > ./packages/server/.env
 echo PASSPHRASE=MYPASSPHRASE >> ./packages/server/.env # Passphrase used to create encryption key
-echo DATABASE_PATH=/root/.flowise >> ./packages/server/.env
-echo APIKEY_PATH=/root/.flowise >> ./packages/server/.env
-echo SECRETKEY_PATH=/root/.flowise >> ./packages/server/.env
-echo LOG_PATH=/root/.flowise/logs >> ./packages/server/.env
+# echo DATABASE_PATH=/root/.flowise >> ./packages/server/.env
+# echo APIKEY_PATH=/root/.flowise >> ./packages/server/.env
+# echo SECRETKEY_PATH=/root/.flowise >> ./packages/server/.env
+# echo LOG_PATH=/root/.flowise/logs >> ./packages/server/.env
 
 echo NUMBER_OF_PROXIES= 1 >> ./packages/server/.env
 
@@ -20,7 +20,7 @@ echo OVERRIDE_DATABASE=true >> ./packages/server/.env
 echo FLOWISE_USERNAME=falktr0n >> ./packages/server/.env
 echo FLOWISE_PASSWORD=Change_this_password >> ./packages/server/.env
 echo DEBUG=true >> ./packages/server/.env
-echo LOG_LEVEL=debug (error | warn | info | verbose | debug) >> ./packages/server/.env
+echo LOG_LEVEL="debug (error | warn | info | verbose | debug)" >> ./packages/server/.env
 #echo TOOL_FUNCTION_BUILTIN_DEP=crypto,fs >> ./packages/server/.env
 #echo TOOL_FUNCTION_EXTERNAL_DEP=moment,lodash >> ./packages/server/.env
 
