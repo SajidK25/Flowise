@@ -11,7 +11,7 @@ echo NUMBER_OF_PROXIES= 1 >> ./packages/server/.env
 
 echo DATABASE_TYPE=postgres >> ./packages/server/.env
 echo DATABASE_PORT=5432 >> ./packages/server/.env
-echo DATABASE_HOST=postgres >> ./packages/server/.env
+echo DATABASE_HOST=localhost >> ./packages/server/.env
 echo DATABASE_NAME=flowise >> ./packages/server/.env
 echo DATABASE_USER=flowise >> ./packages/server/.env
 echo DATABASE_PASSWORD=Change_this_password >> ./packages/server/.env
