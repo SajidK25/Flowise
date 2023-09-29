@@ -47,7 +47,7 @@ jobs:
           - name: Check for Node.js, NPM, and Yarn
             uses: actions/setup-node@v3.1.1
             with:
-                node-version: 18.15.0
+                node-version: 18
                 check-latest: true
                 # cache: 'yarn'
                 # cache-dependency-path: yarn.lock
@@ -61,7 +61,7 @@ jobs:
               script: |
                 if ! command -v yarn &> /dev/null; then
                     echo "Yarn is not installed. Installing..."
-                    sudo apt update -y && sudo apt install curl -y
+                    sudo apt update -y && sudo apt install -y curl && sudo apt install -y nodejs
                     curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
                     echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
                     sudo apt install yarn -y 

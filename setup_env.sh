@@ -17,7 +17,7 @@ echo DATABASE_USER=flowise >> ./packages/server/.env
 echo DATABASE_PASSWORD=Change_this_password >> ./packages/server/.env
 echo OVERRIDE_DATABASE=true >> ./packages/server/.env
 
-echo FLOWISE_USERNAME=falktr0n >> ./packages/server/.env
+echo FLOWISE_USERNAME=falktron >> ./packages/server/.env
 echo FLOWISE_PASSWORD=Change_this_password >> ./packages/server/.env
 echo DEBUG=true >> ./packages/server/.env
 echo LOG_LEVEL="debug (error | warn | info | verbose | debug)" >> ./packages/server/.env
