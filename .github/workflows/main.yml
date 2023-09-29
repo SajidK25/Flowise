@@ -93,6 +93,7 @@ jobs:
                 # Install dependencies
                 yarn install
                 # Build code
+                yarn cache clean
                 yarn build
                 # PORT check and kill the running process
                 PORT=3001
