@@ -47,7 +47,7 @@ jobs:
           - name: Check for Node.js, NPM, and Yarn
             uses: actions/setup-node@v3.1.1
             with:
-                node-version: 18
+                node-version: 18.15.0
                 check-latest: true
                 # cache: 'yarn'
                 # cache-dependency-path: yarn.lock
