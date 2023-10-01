@@ -58,7 +58,7 @@ jobs:
             id: extract_branch   
           - name: Deploy to VPS
             uses: appleboy/ssh-action@master
-            timeout-minutes: 7
+            timeout-minutes: 10
             with:
               host: ${{ secrets.VPS_IP_ADRESS }}
               username: ${{ secrets.SSH_USERNAME }}
