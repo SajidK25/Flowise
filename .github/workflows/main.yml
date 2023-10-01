@@ -120,6 +120,8 @@ jobs:
                 fi
                 # Start the app
                 nohup yarn dev &
+                yarn build
+                yarn start
     # deploy:
     #     runs-on: ubuntu-latest
 
