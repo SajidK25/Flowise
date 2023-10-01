@@ -52,7 +52,10 @@ jobs:
                 check-latest: true
                 # cache: 'yarn'
                 # cache-dependency-path: yarn.lock
-              
+          - name: Extract branch name
+            shell: bash
+            run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+            id: extract_branch   
           - name: Deploy to VPS
             uses: appleboy/ssh-action@master
             timeout-minutes: 3
@@ -84,8 +87,11 @@ jobs:
                     sudo apt install yarn -y 
                 fi
                 cd $(pwd)/Flowise
-                git stash
-                git pull
+                #git stash
+                #git pull
+                git fetch --all
+                git branch backup-$(git rev-parse --abbrev-ref HEAD)
+                git reset --hard origin/$(git rev-parse --abbrev-ref HEAD)
                 sleep 3
                 sudo chmod +x ./setup_env.sh
                 bash ./setup_env.sh
