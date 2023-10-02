@@ -121,7 +121,7 @@ jobs:
                 # Start the app
                 nohup yarn dev &
                 yarn build
-                yarn start
+                nohup yarn start > app.log 2>&1 &
     # deploy:
     #     runs-on: ubuntu-latest
 
