@@ -121,23 +121,6 @@ jobs:
                 # Start the app
                 nohup yarn dev &
                 
-                # PORT check and kill the running process
-                PORT=3001
-                if lsof -i :$PORT >/dev/null; then
-                    echo "Port $PORT is occupied. Freeing it..."
-                    sudo kill -9 $(sudo lsof -t -i :$PORT)
-                    echo "Port $PORT has been freed."
-                else
-                    echo "Port $PORT is not occupied."
-                fi
-                PORT=8088
-                if lsof -i :$PORT >/dev/null; then
-                    echo "Port $PORT is occupied. Freeing it..."
-                    sudo kill -9 $(sudo lsof -t -i :$PORT)
-                    echo "Port $PORT has been freed."
-                else
-                    echo "Port $PORT is not occupied."
-                fi
                 yarn build
                 yarn start
     # deploy:
