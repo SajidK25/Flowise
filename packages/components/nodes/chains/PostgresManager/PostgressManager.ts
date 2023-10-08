@@ -71,6 +71,13 @@ class PostgressManger_Chains implements INode {
                 placeholder: `What is a good name for a company that makes {product}?`
             },
             {
+                label: 'Variable Ignored',
+                name: 'variablesIgnored',
+                type: 'string',
+                rows: 4,
+                placeholder: `Variables dont consider into the prompt`
+            },
+            {
                 label: 'Format Prompt Values',
                 name: 'promptValues',
                 type: 'json',
@@ -89,12 +96,6 @@ class PostgressManger_Chains implements INode {
                 label: 'Language Model',
                 name: 'model',
                 type: 'BaseLanguageModel'
-            },
-            {
-                label: 'Prompt',
-                name: 'prompt',
-                type: 'BasePromptTemplate'
-                
             },
             {
                 label: 'Chain Name',
@@ -127,16 +128,17 @@ class PostgressManger_Chains implements INode {
 
     async init(nodeData: INodeData, input: string, options: ICommonObject): Promise<any> {
         const model = nodeData.inputs?.model as BaseLanguageModel
-        const prompt = nodeData.inputs?.prompt
+        const prompt = await checkPrompt(nodeData);
         const chain = new LLMChain({ llm: model, prompt, verbose: process.env.DEBUG === 'true' ? true : false })
         return chain
 
     }
 
     async run(nodeData: INodeData, input: string, options: ICommonObject): Promise<string> {
-        const inputVar = nodeData.instance.prompt.inputVariables as string[] // ["product"]
+        const prompt = await checkPrompt(nodeData);
+        const inputVar = prompt.inputVariables as string[] // ["product"]
         const chain = nodeData.instance as LLMChain
-        const promptValues = nodeData.inputs?.prompt.promptValues as ICommonObject
+        const promptValues = prompt.promptValues as ICommonObject
         const res = await runPrediction(inputVar, chain, input, promptValues, options, nodeData)
 
 
@@ -168,38 +170,23 @@ class PostgressManger_Chains implements INode {
         const pool = new Pool(poolOptions);
         const conn = await pool.connect();
 
-        const template = nodeData.inputs?.template as string
-        const promptValuesStr = nodeData.inputs?.promptValues as string
-   
     
         let promptFinalValues: { [key: string]: any }  = {};
-        if (promptValuesStr) {
-            promptFinalValues = JSON.parse(promptValuesStr);
+         
+        if(promptValues){ 
+            promptFinalValues = promptValues;
         }
-        const inputVariables = getInputVariables(template);
 
         let result: any;
         let queryString: string;
-        let promptFinal: any;
-        
-        const optionsI: PromptTemplateInput = {
-            template,
-            inputVariables
-        }
-        promptFinal = new PromptTemplate(optionsI)
         promptFinalValues[chainName] = res;
-        promptFinal.promptValues = promptFinalValues
-
-        /* add results from last prompt */
-
-
-        console.log(promptFinalValues);
+  
+   
 
         const pipelineName = 'Example Pipeline Name';
         const projectId = 123; // Example project_id value
         const chatflowId = 456; // Example chat_flow_id value
-        const results = JSON.stringify([promptFinal.promptValues]);
-        console.log(results);
+        const results = JSON.stringify([promptFinalValues]);
         const lastUpdate = new Date(); // Example last_update value
 
          if (query === 'INSERT') {
@@ -229,6 +216,60 @@ class PostgressManger_Chains implements INode {
     }
 }
 
+
+
+const checkPrompt =async (
+    nodeData: INodeData
+
+) => {
+    
+    let template = nodeData.inputs?.template as string
+    const promptValuesStr = nodeData.inputs?.promptValues as string
+    const notConsider = nodeData.inputs?.variablesIgnored as string
+
+    let listNotConsider : string[] = []
+
+    if(notConsider){
+        listNotConsider = createStringArray(notConsider);
+    }
+    template = removeWordFromString(template, listNotConsider);
+
+    let promptValues: ICommonObject = {}
+    if (promptValuesStr) {
+        promptValues = JSON.parse(promptValuesStr)
+    }
+
+    const inputVariables = getInputVariables(template)
+
+    try {
+        const options: PromptTemplateInput = {
+            template,
+            inputVariables
+        }
+        const prompt = new PromptTemplate(options)
+        prompt.promptValues = promptValues
+        console.log(prompt);
+        return prompt
+    } catch (e) {
+        throw new Error(e)
+    }
+}
+
+function removeWordFromString(inputString : string, wordsToRemove : string[] ): string {
+    const stringArray = inputString.split(" ");
+    const filteredArray = stringArray.filter((word) =>
+      wordsToRemove.indexOf(word) === -1
+    );
+    const resultString = filteredArray.join(" ");
+    return resultString;
+  }
+  
+  function createStringArray(wordList: string):  string[] {
+    const wordsArray = wordList.split(",");
+    const stringArray = wordsArray.map((word: string) => `{${word}}`);
+    return stringArray;
+  }
+
 const runPrediction = async (
     inputVariables: string[],
     chain: LLMChain,
@@ -236,78 +277,31 @@ const runPrediction = async (
     promptValuesRaw: ICommonObject,
     options: ICommonObject,
     nodeData: INodeData
-) => {
-    const loggerHandler = new ConsoleCallbackHandler(options.logger)
-    const callbacks = await additionalCallbacks(nodeData, options)
-
-    const isStreaming = options.socketIO && options.socketIOClientId
-    const socketIO = isStreaming ? options.socketIO : undefined
-    const socketIOClientId = isStreaming ? options.socketIOClientId : ''
-
-
-    /**
-     * Apply string transformation to reverse converted special chars:
-     * FROM: { "value": "hello i am benFLOWISE_NEWLINEFLOWISE_NEWLINEFLOWISE_TABhow are you?" }
-     * TO: { "value": "hello i am ben\n\n\thow are you?" }
-     */
-    const promptValues = handleEscapeCharacters(promptValuesRaw, true)
-
-    if (promptValues && inputVariables.length > 0) {
-        let seen: string[] = []
-
-        for (const variable of inputVariables) {
-            seen.push(variable)
-            if (promptValues[variable]) {
-                seen.pop()
-            }
-        }
-
-        if (seen.length === 0) {
-            // All inputVariables have fixed values specified
-            const options = { ...promptValues }
-            if (isStreaming) {
-                const handler = new CustomChainHandler(socketIO, socketIOClientId)
-                console.log("1");
-                const res = await chain.call(options, [loggerHandler, handler, ...callbacks])
-                return res?.text
-            } else {
-                console.log("1.1");
-                const res = await chain.call(options, [loggerHandler, ...callbacks])
-                return res?.text
-            }
-        } else if (seen.length === 1) {
-            // If one inputVariable is not specify, use input (user's question) as value
-            const lastValue = seen.pop()
-            if (!lastValue) throw new Error('Please provide Prompt Values')
-            const options = {
-                ...promptValues,
-                [lastValue]: input
-            }
-            if (isStreaming) {
-                const handler = new CustomChainHandler(socketIO, socketIOClientId)
-                console.log("2");
-                const res = await chain.call(options, [loggerHandler, handler, ...callbacks])
-                return res?.text
-            } else {
-                console.log("2.1");
-                const res = await chain.call(options, [loggerHandler, ...callbacks])
-                return res?.text
-            }
-        } else {
-            throw new Error(`Please provide Prompt Values for: ${seen.join(', ')}`)
-        }
+  ) => {
+    const loggerHandler = new ConsoleCallbackHandler(options.logger);
+    const callbacks = await additionalCallbacks(nodeData, options);
+  
+    const isStreaming = options.socketIO && options.socketIOClientId;
+    const socketIO = isStreaming ? options.socketIO : undefined;
+    const socketIOClientId = isStreaming ? options.socketIOClientId : '';
+  
+    const promptValues = handleEscapeCharacters(promptValuesRaw, true);
+  
+    const handler = new CustomChainHandler(socketIO, socketIOClientId);
+    const mergedOptions = { ...promptValues, ...(inputVariables.length === 1 && { [inputVariables[0]]: input }) };
+  
+    let res;
+  
+    if (isStreaming) {
+      console.log('1');
+      res = await chain.call(mergedOptions, [loggerHandler, handler, ...callbacks]);
     } else {
-        if (isStreaming) {
-            const handler = new CustomChainHandler(socketIO, socketIOClientId)
-            console.log("3");
-            const res = await chain.run(input, [loggerHandler, handler, ...callbacks])
-            return res
-        } else {
-            console.log("3.1");
-            const res = await chain.run(input, [loggerHandler, ...callbacks])
-            return res
-        }
+      console.log('1.1');
+      res = await chain.call(mergedOptions, [loggerHandler, ...callbacks]);
     }
-}
+  
+    return res?.text || res;
+  };
 
-module.exports = { nodeClass: PostgressManger_Chains }
+
+  module.exports = { nodeClass: PostgressManger_Chains }
