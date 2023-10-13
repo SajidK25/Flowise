@@ -189,13 +189,16 @@ class PostgressManger_Chains implements INode {
         const results = JSON.stringify([promptFinalValues]);
         const lastUpdate = new Date(); // Example last_update value
 
+
+        
+
          if (query === 'INSERT') {
             queryString = `
                 INSERT INTO ${tableName}
                 (${columns})
                 VALUES ($1, $2, $3, $4, $5)
-                ON CONFLICT (pipeline_name, project_id, chat_flow_id)
-                DO UPDATE SET results = excluded.results, last_update = excluded.last_update;
+                ON CONFLICT (pipeline_name, project_id, chat_flow_id) DO UPDATE 
+                SET results = EXCLUDED.results, last_update = EXCLUDED.last_update
             `;
         } else {
             queryString = `
