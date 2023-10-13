@@ -211,8 +211,8 @@ class PostgressManger_Chains implements INode {
         // eslint-disable-next-line no-console
         console.log('\x1b[93m\x1b[1m\n*****FINAL RESULT*****\n\x1b[0m\x1b[0m')
         // eslint-disable-next-line no-console
-        console.log(res)
-        return res
+        console.log(results);
+        return results;
     }
 }
 
