@@ -190,19 +190,37 @@ class PostgressManger_Chains implements INode {
         const lastUpdate = new Date(); // Example last_update value
 
 
-        
+        const checkQuery = `
+        SELECT * FROM ${tableName}
+        WHERE pipeline_name = $1 AND project_id = $2 AND chat_flow_id = $3
+        `;
+
+        const checkParams = [pipelineName, projectId, chatflowId];
+        const checkResult = await conn.query(checkQuery, checkParams);
+        let params : any;
+
 
          if (query === 'INSERT') {
-            queryString = `
-                INSERT INTO ${tableName}
-                (${columns})
-                VALUES ($1, $2, $3, $4, $5)
-                ON CONFLICT (pipeline_name, project_id, chat_flow_id) DO UPDATE 
-                SET results = EXCLUDED.results, last_update = EXCLUDED.last_update
-                WHERE ${tableName}.pipeline_name = $1
-                AND ${tableName}.project_id = $2
-                AND ${tableName}.chat_flow_id = $3
-            `;
+
+            if (checkResult.rows.length > 0) {
+                // Record exists, perform an update
+                  queryString = `
+                  UPDATE ${tableName}
+                  SET results = $1, last_update = $2
+                  WHERE pipeline_name = $3 AND project_id = $4 AND chat_flow_id = $5;
+                `;
+                 params = [results, lastUpdate, pipelineName, projectId, chatflowId];
+                
+              } else {
+                // Record doesn't exist, perform an insert
+                  queryString= `
+                  INSERT INTO ${tableName}
+                  (${columns})
+                  VALUES ($1, $2, $3, $4, $5);
+                `;
+                 params = [pipelineName, projectId, chatflowId, results, lastUpdate];
+               
+              }
         } else {
             queryString = `
                 SELECT * FROM ${tableName}
@@ -210,7 +228,6 @@ class PostgressManger_Chains implements INode {
             `;
         }
 
-        const params = [pipelineName, projectId, chatflowId, results, lastUpdate]; // Replace valueX with actual values
         result = await conn.query(queryString, params);
         conn.release(); 
 
