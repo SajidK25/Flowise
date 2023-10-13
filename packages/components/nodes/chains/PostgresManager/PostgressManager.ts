@@ -194,7 +194,7 @@ class PostgressManger_Chains implements INode {
                 INSERT INTO ${tableName}
                 (${columns})
                 VALUES ($1, $2, $3, $4, $5)
-                ON CONFLICT (projectId, pipeline_name, chatflow_id)
+                ON CONFLICT (projectId, pipelineName, chatflowId)
                 DO UPDATE SET results = excluded.results, last_update = excluded.last_update;
             `;
         } else {
