@@ -183,7 +183,7 @@ class PostgressManger_Chains implements INode {
   
    
 
-        const pipelineName = 'Example Pipeline Name';
+        const pipelineName = chainName;
         const projectId = 123; // Example project_id value
         const chatflowId = 456; // Example chat_flow_id value
         const results = JSON.stringify([promptFinalValues]);
@@ -193,7 +193,9 @@ class PostgressManger_Chains implements INode {
             queryString = `
                 INSERT INTO ${tableName}
                 (${columns})
-                VALUES ($1, $2, $3, $4, $5);
+                VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (projected, pipeline_name, chatflow_id)
+                DO UPDATE SET results = excluded.results, last_update = excluded.last_update;
             `;
         } else {
             queryString = `
