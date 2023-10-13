@@ -199,6 +199,9 @@ class PostgressManger_Chains implements INode {
                 VALUES ($1, $2, $3, $4, $5)
                 ON CONFLICT (pipeline_name, project_id, chat_flow_id) DO UPDATE 
                 SET results = EXCLUDED.results, last_update = EXCLUDED.last_update
+                WHERE ${tableName}.pipeline_name = $1
+                AND ${tableName}.project_id = $2
+                AND ${tableName}.chat_flow_id = $3
             `;
         } else {
             queryString = `
