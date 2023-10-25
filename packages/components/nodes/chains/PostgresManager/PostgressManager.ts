@@ -105,6 +105,13 @@ class PostgressManger_Chains implements INode {
                 optional: true
             },
             {
+                label: 'Pipeline Name',
+                name: 'pipelineName',
+                type: 'string',
+                placeholder: 'Name Your Pipeline',
+                optional: true
+            },
+            {
                 
                 label: 'QUERY',
                 name: 'queryToSend',
@@ -150,6 +157,7 @@ class PostgressManger_Chains implements INode {
         const columns = nodeData.inputs?.columns || 'pipeline_name, project_id, chat_flow_id, results, last_update' as string
         const query = nodeData.inputs?.queryToSend as string
         const chainName = nodeData.inputs?.chainName as string
+        const pipelineName = nodeData.inputs?.pipelineName || 'default' as string;
 
 
         const postgresConnectionOptions  = {
@@ -183,7 +191,7 @@ class PostgressManger_Chains implements INode {
   
    
 
-        const pipelineName = chainName;
+
         const projectId = 123; // Example project_id value
         const chatflowId = 456; // Example chat_flow_id value
         const results = JSON.stringify([promptFinalValues]);
