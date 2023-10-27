@@ -112,6 +112,13 @@ class PostgressManger_Chains implements INode {
                 optional: true
             },
             {
+                label: 'Info to add from the question format json',
+                name: 'listAttributes',
+                type: 'string',
+                rows: 4,
+                placeholder: `item1,item2`
+            },
+            {
                 
                 label: 'QUERY',
                 name: 'queryToSend',
@@ -147,6 +154,7 @@ class PostgressManger_Chains implements INode {
         const chain = nodeData.instance as LLMChain
         const promptValues = prompt.promptValues as ICommonObject
         const res = await runPrediction(inputVar, chain, input, promptValues, options, nodeData)
+        const listAttributes = nodeData.inputs?.listAttributes as string
 
 
         /** -------variable for data base ------------ */
@@ -179,23 +187,27 @@ class PostgressManger_Chains implements INode {
         const conn = await pool.connect();
 
     
-        let promptFinalValues: { [key: string]: any }  = {};
-         
-        if(promptValues){ 
-            promptFinalValues = promptValues;
+    
+        let promptFinalValues = promptValues || {};
+        let queryString: string;
+
+        if (listAttributes) {
+            const filterAttributes = createStringArraySimple(listAttributes);
+
+            filterAttributes.forEach((att) => {
+                if (promptFinalValues.hasOwnProperty(att)) {
+                    console.log("yes baby " + att);
+                    promptFinalValues[att] = promptValues[att];
+                }
+            });
         }
 
-        let result: any;
-        let queryString: string;
-        promptFinalValues[chainName] = res;
-  
-   
-
-
-        const projectId = 123; // Example project_id value
-        const chatflowId = 456; // Example chat_flow_id value
+        const projectId = 123;
+        const chatflowId = 456;
         const results = JSON.stringify([promptFinalValues]);
-        const lastUpdate = new Date(); // Example last_update value
+        const lastUpdate = new Date();
+        let result: any;
+        promptFinalValues[chainName] = res;
 
 
         const checkQuery = `
@@ -259,20 +271,35 @@ const checkPrompt =async (
     let template = nodeData.inputs?.template as string
     const promptValuesStr = nodeData.inputs?.promptValues as string
     const notConsider = nodeData.inputs?.variablesIgnored as string
+    const listAttributes = nodeData.inputs?.listAttributes as string
 
-    let listNotConsider : string[] = []
 
-    if(notConsider){
-        listNotConsider = createStringArray(notConsider);
-    }
+    //attributes to not consider in the prompt
+    let listNotConsider = notConsider ? createStringArray(notConsider) : [];
+    let filterAttributes = listAttributes ? createStringArraySimple(listAttributes) : [];
+
     template = removeWordFromString(template, listNotConsider);
 
-    let promptValues: ICommonObject = {}
-    if (promptValuesStr) {
-        promptValues = JSON.parse(promptValuesStr)
+
+
+    // prompt value refined with information from the question format json
+
+    template = removeWordFromString(template, listNotConsider);
+
+    let promptValues = promptValuesStr ? (typeof promptValuesStr === 'object' ? promptValuesStr : JSON.parse(promptValuesStr)) : {};
+
+    if (filterAttributes) {
+        filterAttributes.forEach((att) => {
+            if (promptValues.hasOwnProperty(att)) {
+                const content = handleEscapeCharacters(promptValues[att], true);
+                const parseContent = JSON.parse(content);
+                promptValues[att] = parseContent[att];
+            }
+        });
     }
 
-    const inputVariables = getInputVariables(template)
+    const inputVariables = getInputVariables(template);
+
 
     try {
         const options: PromptTemplateInput = {
@@ -281,7 +308,6 @@ const checkPrompt =async (
         }
         const prompt = new PromptTemplate(options)
         prompt.promptValues = promptValues
-        console.log(prompt);
         return prompt
     } catch (e) {
         throw new Error(e)
@@ -297,11 +323,14 @@ function removeWordFromString(inputString : string, wordsToRemove : string[] ): 
     return resultString;
   }
   
-  function createStringArray(wordList: string):  string[] {
-    const wordsArray = wordList.split(",");
-    const stringArray = wordsArray.map((word: string) => `{${word}}`);
-    return stringArray;
+  function createStringArray(wordList: string): string[] {
+    return wordList.split(",").map((word: string) => `{${word}}`);
   }
+  
+  function createStringArraySimple(wordList: string): string[] {
+    return wordList.split(",");
+  }
+  
 
 const runPrediction = async (
     inputVariables: string[],
@@ -322,6 +351,7 @@ const runPrediction = async (
   
     const handler = new CustomChainHandler(socketIO, socketIOClientId);
     const mergedOptions = { ...promptValues, ...(inputVariables.length === 1 && { [inputVariables[0]]: input }) };
+ 
   
     let res;
   
