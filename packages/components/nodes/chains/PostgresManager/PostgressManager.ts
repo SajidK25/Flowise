@@ -359,7 +359,7 @@ const runPrediction = async (
       console.log('1');
       res = await chain.call(mergedOptions, [loggerHandler, handler, ...callbacks]);
     } else {
-      console.log('1.12');
+      console.log('1.1');
       res = await chain.call(mergedOptions, [loggerHandler, ...callbacks]);
     }
   
