@@ -38,13 +38,6 @@ class PromptTemplate_Prompts implements INode {
                 optional: true,
                 acceptVariable: true,
                 list: true
-            },
-            {
-                label: 'Info to add from the question format json',
-                name: 'listAttributes',
-                type: 'string',
-                rows: 4,
-                placeholder: `item1,item2`
             }
         ]
     }
@@ -52,9 +45,6 @@ class PromptTemplate_Prompts implements INode {
     async init(nodeData: INodeData): Promise<any> {
         const template = nodeData.inputs?.template as string
         const promptValuesStr = nodeData.inputs?.promptValues as string
-        const listAttributes = nodeData.inputs?.listAttributes as string
-
-
 
 
         let promptValues: ICommonObject = {}
@@ -62,25 +52,21 @@ class PromptTemplate_Prompts implements INode {
             try {
                 promptValues = typeof promptValuesStr === 'object' ? promptValuesStr : JSON.parse(promptValuesStr)
 
-
-                if(listAttributes){
-                    const filterAttributes= createStringArray(listAttributes);
-                    filterAttributes.forEach((att) => {
-
-                        if (promptValues.hasOwnProperty(att)) {
-                          const content =  handleEscapeCharacters(promptValues[att], true);
-                          const parseContent = JSON.parse(content);
-                          promptValues[att] = parseContent[att];
-
-                        }
-                      });
+                for (let key in promptValues) {
+                    if (promptValues.hasOwnProperty(key)) {
+                      try {
+                        const content =  handleEscapeCharacters(promptValues[key], true);
+                        const parseContent = JSON.parse(content);
+                        promptValues[key] = parseContent[key];
+                      } catch {}
+                    }
                 }
                 
             } catch (exception) {
                 throw new Error("Invalid JSON in the PromptTemplate's promptValues: " + exception)
             }
         }
- 
+
 
         const inputVariables = getInputVariables(template)
 

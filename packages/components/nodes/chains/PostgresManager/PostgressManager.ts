@@ -110,32 +110,6 @@ class PostgressManger_Chains implements INode {
                 type: 'string',
                 placeholder: 'Name Your Pipeline',
                 optional: true
-            },
-            {
-                label: 'Info to add from the question format json',
-                name: 'listAttributes',
-                type: 'string',
-                rows: 4,
-                placeholder: `item1,item2`
-            },
-            {
-                
-                label: 'QUERY',
-                name: 'queryToSend',
-                type : 'options',
-                options: [
-                    {
-                        label: 'INSERT',
-                        name: 'INSERT'
-                    },
-                    {
-                        label: 'SELECT',
-                        name: 'SELECT'
-                    }
-                ],
-                default: 'INSERT',
-                placeholder: 'INSERT'
-
             }
         ]
     }
@@ -150,170 +124,130 @@ class PostgressManger_Chains implements INode {
 
     async run(nodeData: INodeData, input: string, options: ICommonObject): Promise<string> {
         const prompt = await checkPrompt(nodeData);
-        const inputVar = prompt.inputVariables as string[] // ["product"]
-        const chain = nodeData.instance as LLMChain
-        const promptValues = prompt.promptValues as ICommonObject
-        const res = await runPrediction(inputVar, chain, input, promptValues, options, nodeData)
-        const listAttributes = nodeData.inputs?.listAttributes as string
-
-
-        /** -------variable for data base ------------ */
-        const credentialData = await getCredentialData(nodeData.credential ?? '', options)
-        const user = getCredentialParam('user', credentialData, nodeData)
-        const password = getCredentialParam('password', credentialData, nodeData)
-        const tableName = nodeData.inputs?.tableName || 'pipeline' as string
-        const columns = nodeData.inputs?.columns || 'pipeline_name, project_id, chat_flow_id, results, last_update' as string
-        const query = nodeData.inputs?.queryToSend as string
-        const chainName = nodeData.inputs?.chainName as string
-        const pipelineName = nodeData.inputs?.pipelineName || 'default' as string;
-
-
-        const postgresConnectionOptions  = {
-            type: 'postgres',
-            host: nodeData.inputs?.host || 'localhost',
-            port: nodeData.inputs?.port || '5432',
-            username: user,
-            password: password,
-            database: nodeData.inputs?.databaseName || 'postgres',
+        const inputVar = prompt.inputVariables as string[];
+        const chain = nodeData.instance as LLMChain;
+        const promptValues = prompt.promptValues as ICommonObject;
+        const res = await runPrediction(inputVar, chain, input, promptValues, options, nodeData);
+      
+        // Database variables
+        const credentialData = await getCredentialData(nodeData.credential ?? '', options);
+        const user = getCredentialParam('user', credentialData, nodeData);
+        const password = getCredentialParam('password', credentialData, nodeData);
+        const tableName = nodeData.inputs?.tableName || 'pipeline';
+        const chainName = nodeData.inputs?.chainName as string;
+        const pipelineName = nodeData.inputs?.pipelineName || 'default';
+      
+        // Postgres connection options
+        const postgresConnectionOptions = {
+          type: 'postgres',
+          host: nodeData.inputs?.host || 'localhost',
+          port: nodeData.inputs?.port || '5432',
+          username: user,
+          password: password,
+          database: nodeData.inputs?.databaseName || 'postgres',
         };
-        const poolOptions ={
-            host: postgresConnectionOptions.host,
-            port: postgresConnectionOptions.port,
-            user: postgresConnectionOptions.username,
-            password: postgresConnectionOptions.password,
-            database: postgresConnectionOptions.database,
+        const poolOptions = {
+          host: postgresConnectionOptions.host,
+          port: postgresConnectionOptions.port,
+          user: postgresConnectionOptions.username,
+          password: postgresConnectionOptions.password,
+          database: postgresConnectionOptions.database,
         };
         const pool = new Pool(poolOptions);
         const conn = await pool.connect();
-
-    
-    
+      
         let promptFinalValues = promptValues || {};
         let queryString: string;
-
-        if (listAttributes) {
-            const filterAttributes = createStringArraySimple(listAttributes);
-
-            filterAttributes.forEach((att) => {
-                if (promptFinalValues.hasOwnProperty(att)) {
-                    console.log("yes baby " + att);
-                    promptFinalValues[att] = promptValues[att];
-                }
-            });
+      
+        // Iterate through promptFinalValues and parse value if possible
+        for (let key in promptFinalValues) {
+          if (promptFinalValues.hasOwnProperty(key)) {
+            try {
+              const content = handleEscapeCharacters(promptFinalValues[key], true);
+              const parseContent = JSON.parse(content);
+              promptFinalValues[key] = parseContent[key];
+            } catch {}
+          }
         }
-
+      
+        promptFinalValues[chainName] = res;
         const projectId = 123;
         const chatflowId = 456;
         const results = JSON.stringify([promptFinalValues]);
         const lastUpdate = new Date();
         let result: any;
-        promptFinalValues[chainName] = res;
-
-
+       
+      
         const checkQuery = `
-        SELECT * FROM ${tableName}
-        WHERE pipeline_name = $1 AND project_id = $2 AND chat_flow_id = $3
+          SELECT * FROM ${tableName}
+          WHERE pipeline_name = $1 AND project_id = $2 AND chat_flow_id = $3
         `;
-
+      
         const checkParams = [pipelineName, projectId, chatflowId];
         const checkResult = await conn.query(checkQuery, checkParams);
-        let params : any;
-
-
-         if (query === 'INSERT') {
-
-            if (checkResult.rows.length > 0) {
-                // Record exists, perform an update
-                  queryString = `
-                  UPDATE ${tableName}
-                  SET results = $1, last_update = $2
-                  WHERE pipeline_name = $3 AND project_id = $4 AND chat_flow_id = $5;
-                `;
-                 params = [results, lastUpdate, pipelineName, projectId, chatflowId];
-                
-              } else {
-                // Record doesn't exist, perform an insert
-                  queryString= `
-                  INSERT INTO ${tableName}
-                  (${columns})
-                  VALUES ($1, $2, $3, $4, $5);
-                `;
-                 params = [pipelineName, projectId, chatflowId, results, lastUpdate];
-               
-              }
+        let params: any;
+        
+        if (checkResult.rows.length > 0) {
+          // Record exists, perform an update
+          queryString = `
+            UPDATE ${tableName}
+            SET results = $1, last_update = $2
+            WHERE pipeline_name = $3 AND project_id = $4 AND chat_flow_id = $5;
+          `;
+          params = [results, lastUpdate, pipelineName, projectId, chatflowId];
+                  
         } else {
-            queryString = `
-                SELECT * FROM ${tableName}
-                WHERE pipeline_id = 1;
-            `;
+          // Record doesn't exist, perform an insert
+          queryString= `
+            INSERT INTO ${tableName}
+            (pipeline_name, project_id, chat_flow_id, results, last_update)
+            VALUES ($1, $2, $3, $4, $5);
+          `;
+          params = [pipelineName, projectId, chatflowId, results, lastUpdate];
         }
-
+      
         result = await conn.query(queryString, params);
-        conn.release(); 
-
-
-
-        // eslint-disable-next-line no-console
-        console.log('\x1b[93m\x1b[1m\n*****FINAL RESULT*****\n\x1b[0m\x1b[0m')
-        // eslint-disable-next-line no-console
+        conn.release();
+      
+        console.log('\x1b[93m\x1b[1m\n*****FINAL RESULT*****\n\x1b[0m\x1b[0m');
         console.log(results);
+        
         return results;
-    }
-}
+      }
+    }      
 
-
-
-const checkPrompt =async (
-    nodeData: INodeData
-
-) => {
-    
-    let template = nodeData.inputs?.template as string
-    const promptValuesStr = nodeData.inputs?.promptValues as string
-    const notConsider = nodeData.inputs?.variablesIgnored as string
-    const listAttributes = nodeData.inputs?.listAttributes as string
-
-
-    //attributes to not consider in the prompt
-    let listNotConsider = notConsider ? createStringArray(notConsider) : [];
-    let filterAttributes = listAttributes ? createStringArraySimple(listAttributes) : [];
-
-    template = removeWordFromString(template, listNotConsider);
-
-
-
-    // prompt value refined with information from the question format json
-
-    template = removeWordFromString(template, listNotConsider);
-
-    let promptValues = promptValuesStr ? (typeof promptValuesStr === 'object' ? promptValuesStr : JSON.parse(promptValuesStr)) : {};
-
-    if (filterAttributes) {
-        filterAttributes.forEach((att) => {
-            if (promptValues.hasOwnProperty(att)) {
-                const content = handleEscapeCharacters(promptValues[att], true);
-                const parseContent = JSON.parse(content);
-                promptValues[att] = parseContent[att];
-            }
-        });
-    }
-
-    const inputVariables = getInputVariables(template);
-
-
-    try {
-        const options: PromptTemplateInput = {
-            template,
-            inputVariables
+    const checkPrompt = async (nodeData: INodeData) => {
+        let template = nodeData.inputs?.template as string;
+        const promptValuesStr = nodeData.inputs?.promptValues as string;
+        const notConsider = nodeData.inputs?.variablesIgnored as string;
+      
+        const listNotConsider = notConsider ? createStringArray(notConsider) : [];
+      
+        template = removeWordFromString(template, listNotConsider);
+      
+        const promptValues = promptValuesStr ? (typeof promptValuesStr === 'object' ? promptValuesStr : JSON.parse(promptValuesStr)) : {};
+      
+        for (const key in promptValues) {
+          if (promptValues.hasOwnProperty(key)) {
+            try {
+              const content = handleEscapeCharacters(promptValues[key], true);
+              const parseContent = JSON.parse(content);
+              promptValues[key] = parseContent[key];
+            } catch {}
+          }
         }
-        const prompt = new PromptTemplate(options)
-        prompt.promptValues = promptValues
-        return prompt
-    } catch (e) {
-        throw new Error(e)
-    }
-}
-
+      
+        const inputVariables = getInputVariables(template);
+      
+        const options: PromptTemplateInput = {
+          template,
+          inputVariables,
+        };
+        const prompt = new PromptTemplate(options);
+        prompt.promptValues = promptValues;
+        return prompt;
+    };
+      
 function removeWordFromString(inputString : string, wordsToRemove : string[] ): string {
     const stringArray = inputString.split(" ");
     const filteredArray = stringArray.filter((word) =>
@@ -325,10 +259,6 @@ function removeWordFromString(inputString : string, wordsToRemove : string[] ): 
   
   function createStringArray(wordList: string): string[] {
     return wordList.split(",").map((word: string) => `{${word}}`);
-  }
-  
-  function createStringArraySimple(wordList: string): string[] {
-    return wordList.split(",");
   }
   
 
