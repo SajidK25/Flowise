@@ -5,7 +5,7 @@ echo PASSPHRASE=MYPASSPHRASE >> ./packages/server/.env # Passphrase used to crea
 # echo DATABASE_PATH=/root/.flowise >> ./packages/server/.env
 # echo APIKEY_PATH=/root/.flowise >> ./packages/server/.env
 echo SECRETKEY_PATH=/root/.flowise >> ./packages/server
-echo FLOWISE_SECRETKEY_OVERWRITE=p5rZHLHVK77Lmrto2mWQQcixR+bYYj6i >> ./packages/server/.env
+#echo FLOWISE_SECRETKEY_OVERWRITE=p5rZHLHVK77Lmrto2mWQQcixR+bYYj6i >> ./packages/server/.env
 # echo LOG_PATH=/root/.flowise/logs >> ./packages/server/.env
 
 echo NUMBER_OF_PROXIES= 1 >> ./packages/server/.env
